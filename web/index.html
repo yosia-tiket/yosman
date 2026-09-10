@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Yosman</title>
+  <link rel="icon" href="/static/favicon.png" type="image/png" />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/app.css" />
+</head>
+<body>
+  <div id="splash" aria-hidden="true">
+    <img src="/static/assets/splash.png" alt="Yosman" />
+  </div>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">
+        <img class="mark" src="/static/assets/logo-mark.png" alt="" />
+        <div>
+          <strong>YOSMAN</strong>
+          <span class="tagline">Rest easy with Yosman.</span>
+        </div>
+      </div>
+      <nav class="views" role="tablist">
+        <button class="view-btn active" data-view="builder">Builder</button>
+        <button class="view-btn" data-view="runner">Runner</button>
+        <button class="view-btn" data-view="docs">Docs</button>
+        <button class="view-btn" data-view="mock">Mock</button>
+        <button class="view-btn" data-view="envs">Environments</button>
+      </nav>
+      <div class="top-actions">
+        <label class="env-label">
+          <span>Env</span>
+          <select id="env-select"></select>
+        </label>
+        <button type="button" class="btn ghost" id="btn-history">History</button>
+      </div>
+    </header>
+
+    <div class="shell">
+      <aside class="sidebar" id="sidebar">
+        <div class="side-head">
+          <h2>Collections</h2>
+          <div class="side-btns">
+            <button type="button" class="icon-btn" id="btn-new-collection" title="New collection">+</button>
+            <button type="button" class="icon-btn" id="btn-import" title="Import Postman collection or environment">↑</button>
+            <button type="button" class="icon-btn wide" id="btn-import-curl" title="Import cURL">cURL</button>
+            <input type="file" id="import-file" accept="application/json,.json,.postman_collection.json,.postman_environment.json" hidden />
+          </div>
+        </div>
+        <input type="search" id="tree-search" placeholder="Search requests…" />
+        <div id="tree" class="tree"></div>
+        <div class="side-foot">
+          <button type="button" class="btn ghost small" id="btn-export-ws">Export workspace</button>
+        </div>
+      </aside>
+      <div class="splitter" id="splitter" title="Drag to resize"></div>
+
+      <main class="main">
+        <section id="view-builder" class="view active">
+          <div id="tabs" class="tabs"></div>
+          <div id="builder-empty" class="empty-state hidden">
+            <h3>No request open</h3>
+            <p>Pick a request from the sidebar or create a new one in a collection.</p>
+          </div>
+          <div id="builder-body">
+            <div class="req-bar">
+              <input id="req-name" class="req-name" spellcheck="false" />
+              <select id="req-method" class="method-select"></select>
+              <input id="req-url" class="url-input" spellcheck="false" placeholder="https://api.example.com/{{resource}}" />
+              <button type="button" class="btn primary" id="btn-send">Send</button>
+              <button type="button" class="btn ghost" id="btn-save" title="Saved automatically">Saved</button>
+            </div>
+            <div class="req-layout">
+              <div class="req-editor">
+                <div class="subtabs" id="req-subtabs">
+                  <button class="subtab active" data-panel="params">Params</button>
+                  <button class="subtab" data-panel="auth">Auth</button>
+                  <button class="subtab" data-panel="headers">Headers</button>
+                  <button class="subtab" data-panel="body">Body</button>
+                  <button class="subtab" data-panel="scripts">Scripts</button>
+                  <button class="subtab" data-panel="mock">Mock</button>
+                  <button class="subtab" data-panel="desc">Description</button>
+                </div>
+                <div class="panels">
+                  <div class="panel active" id="panel-params">
+                    <table class="kv-table">
+                      <thead><tr><th></th><th>Key</th><th>Value</th><th></th></tr></thead>
+                      <tbody id="params-body"></tbody>
+                    </table>
+                  </div>
+                  <div class="panel" id="panel-auth">
+                    <label class="field">
+                      <span>Type</span>
+                      <select id="auth-type">
+                        <option value="none">No Auth</option>
+                        <option value="bearer">Bearer Token</option>
+                        <option value="basic">Basic Auth</option>
+                        <option value="apikey">API Key</option>
+                      </select>
+                    </label>
+                    <div id="auth-none" class="auth-box muted">This request does not send credentials.</div>
+                    <div id="auth-bearer" class="auth-box hidden">
+                      <label class="field"><span>Token</span><input id="auth-token" spellcheck="false" placeholder="{{token}}" /></label>
+                    </div>
+                    <div id="auth-basic" class="auth-box hidden">
+                      <label class="field"><span>Username</span><input id="auth-user" spellcheck="false" /></label>
+                      <label class="field"><span>Password</span><input id="auth-pass" type="password" /></label>
+                    </div>
+                    <div id="auth-apikey" class="auth-box hidden">
+                      <label class="field"><span>Key</span><input id="auth-key" spellcheck="false" placeholder="X-API-Key" /></label>
+                      <label class="field"><span>Value</span><input id="auth-value" spellcheck="false" placeholder="{{apiKey}}" /></label>
+                      <label class="field">
+                        <span>Add to</span>
+                        <select id="auth-in">
+                          <option value="header">Header</option>
+                          <option value="query">Query params</option>
+                        </select>
+                      </label>
+                    </div>
+                  </div>
+                  <div class="panel" id="panel-headers">
+                    <table class="kv-table">
+                      <thead><tr><th></th><th>Key</th><th>Value</th><th></th></tr></thead>
+                      <tbody id="headers-body"></tbody>
+                    </table>
+                  </div>
+                  <div class="panel" id="panel-body">
+                    <div class="row-gap">
+                      <select id="body-type">
+                        <option value="none">None</option>
+                        <option value="json">JSON</option>
+                        <option value="raw">Raw</option>
+                        <option value="urlencoded">x-www-form-urlencoded</option>
+                        <option value="formdata">multipart/form-data</option>
+                      </select>
+                      <button type="button" class="btn ghost small" id="btn-pretty-json">Format JSON</button>
+                    </div>
+                    <textarea id="req-body" class="code-area" spellcheck="false" placeholder="{ }"></textarea>
+                  </div>
+                  <div class="panel" id="panel-scripts">
+                    <div class="script-grid">
+                      <label class="field grow">
+                        <span>Pre-request <em>JavaScript · pm.environment.set</em></span>
+                        <textarea id="pre-script" class="code-area" spellcheck="false" placeholder="pm.environment.set('stamp', Date.now());"></textarea>
+                      </label>
+                      <label class="field grow">
+                        <span>Tests <em>JavaScript · pm.test / pm.expect</em></span>
+                        <textarea id="test-script" class="code-area" spellcheck="false" placeholder='pm.test("Status is 200", () => pm.expect(pm.response.code).to.equal(200));'></textarea>
+                      </label>
+                    </div>
+                  </div>
+                  <div class="panel" id="panel-mock">
+                    <label class="check"><input type="checkbox" id="mock-enabled" /> Enable mock for this request</label>
+                    <div class="row-gap">
+                      <label class="field"><span>Status</span><input id="mock-status" type="number" min="100" max="599" /></label>
+                      <label class="field"><span>Delay (ms)</span><input id="mock-delay" type="number" min="0" max="10000" /></label>
+                    </div>
+                    <label class="field grow"><span>Mock body</span><textarea id="mock-body" class="code-area" spellcheck="false"></textarea></label>
+                    <p class="hint">Incoming calls to <code>/mock/&lt;collection-id&gt;/path</code> return this payload when the method and path match.</p>
+                  </div>
+                  <div class="panel" id="panel-desc">
+                    <textarea id="req-desc" class="code-area" placeholder="What this request does, expected fields, auth notes…"></textarea>
+                  </div>
+                </div>
+              </div>
+              <div class="resp-wrap">
+                <div class="resp-head">
+                  <h3>Response</h3>
+                  <div id="resp-meta" class="resp-meta muted">Send a request to see the result</div>
+                </div>
+                <div class="subtabs" id="resp-subtabs">
+                  <button class="subtab active" data-rpanel="body">Body</button>
+                  <button class="subtab" data-rpanel="headers">Headers</button>
+                  <button class="subtab" data-rpanel="tests">Tests</button>
+                </div>
+                <div class="resp-toolbar" id="resp-toolbar">
+                  <button type="button" class="chip active" data-body-mode="pretty">Pretty</button>
+                  <button type="button" class="chip" data-body-mode="raw">Raw</button>
+                  <button type="button" class="chip" data-body-mode="preview">Preview</button>
+                </div>
+                <div id="resp-body" class="resp-body"><div class="muted pad">No response yet.</div></div>
+                <div id="resp-headers" class="resp-body hidden"></div>
+                <div id="resp-tests" class="resp-body hidden"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="view-runner" class="view">
+          <div class="page-head">
+            <div>
+              <h2>Collection runner</h2>
+              <p>Run every request in order, including pre-request scripts and tests.</p>
+            </div>
+            <div class="row-gap">
+              <select id="runner-collection"></select>
+              <button type="button" class="btn primary" id="btn-run-col">Run collection</button>
+            </div>
+          </div>
+          <div id="runner-progress" class="muted"></div>
+          <div id="runner-results" class="runner-results"></div>
+        </section>
+
+        <section id="view-docs" class="view">
+          <div class="page-head">
+            <div>
+              <h2>API documentation</h2>
+              <p>Generated from collection descriptions, methods, URLs, and example bodies.</p>
+            </div>
+            <div class="row-gap">
+              <select id="docs-collection"></select>
+              <button type="button" class="btn ghost" id="btn-print-docs">Print / save PDF</button>
+            </div>
+          </div>
+          <article id="docs-output" class="docs"></article>
+        </section>
+
+        <section id="view-mock" class="view">
+          <div class="page-head">
+            <div>
+              <h2>Mock server</h2>
+              <p>Yosman serves mocks on this same process. Point clients at the URLs below while the backend is still in progress.</p>
+            </div>
+          </div>
+          <div id="mock-board" class="mock-board"></div>
+        </section>
+
+        <section id="view-envs" class="view">
+          <div class="page-head">
+            <div>
+              <h2>Environments</h2>
+              <p>Switch variable sets for development, staging, and production. Use <code>{{name}}</code> in URLs, headers, and bodies.</p>
+            </div>
+            <button type="button" class="btn primary" id="btn-new-env">New environment</button>
+          </div>
+          <div class="env-layout">
+            <ul id="env-list" class="env-list"></ul>
+            <div class="env-editor">
+              <div class="row-gap">
+                <input id="env-name" placeholder="Environment name" />
+                <button type="button" class="btn danger ghost" id="btn-del-env">Delete</button>
+              </div>
+              <table class="kv-table">
+                <thead><tr><th></th><th>Variable</th><th>Value</th><th></th></tr></thead>
+                <tbody id="env-vars"></tbody>
+              </table>
+              <p class="hint">Built-ins: <code>{{origin}}</code>, <code>{{$timestamp}}</code>, <code>{{$isoTimestamp}}</code>, <code>{{$guid}}</code>, <code>{{$randomInt}}</code></p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="curl-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="drawer-head">
+        <h3>Import cURL</h3>
+        <button type="button" class="icon-btn" id="btn-close-curl">×</button>
+      </div>
+      <p class="hint pad-x">Paste a command copied from a browser, Postman, or a terminal. It becomes a request in the selected collection.</p>
+      <label class="field pad-x">
+        <span>Add to</span>
+        <select id="curl-target"></select>
+      </label>
+      <div class="pad-x">
+        <textarea id="curl-input" class="code-area curl-area" spellcheck="false" placeholder="curl --location 'https://api.example.com/users' --header 'Authorization: Bearer {{token}}' --data '{&quot;name&quot;:&quot;Ada&quot;}'"></textarea>
+      </div>
+      <div class="row-gap pad-x modal-actions">
+        <button type="button" class="btn ghost" id="btn-cancel-curl">Cancel</button>
+        <button type="button" class="btn primary" id="btn-curl-import">Import request</button>
+      </div>
+    </div>
+  </div>
+  <div id="history-drawer" class="drawer hidden">
+    <div class="drawer-head">
+      <h3>History</h3>
+      <button type="button" class="icon-btn" id="btn-close-history">×</button>
+    </div>
+    <div id="history-list" class="history-list"></div>
+  </div>
+  <div id="drawer-backdrop" class="backdrop hidden"></div>
+  <div id="toast" class="toast hidden"></div>
+  <div id="ctx-menu" class="ctx-menu hidden"></div>
+
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/tests.js"></script>
+  <script src="/static/js/postman.js"></script>
+  <script src="/static/js/curl.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
