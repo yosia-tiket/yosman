@@ -1,11 +1,11 @@
-# Dokumentasi Yosman
+# Yosman documentation
 
 **REST easy with Yosman.**
 
-| Dokumen | Untuk siapa |
+| Document | Who it's for |
 | --- | --- |
-| [Getting started](getting-started.md) | Baru pertama kali membuka Yosman |
-| [Tutorial](tutorial.md) | Ingin alur kerja: request, tes, import, mock |
-| [Panduan](panduan.md) | Referensi fitur, shortcut, data, troubleshooting |
+| [Getting started](getting-started.md) | Opening Yosman for the first time |
+| [Tutorial](tutorial.md) | Learning the workflow: requests, tests, import, mocks |
+| [Guide](guide.md) | Feature reference, shortcuts, data, troubleshooting |
 
-Kembali ke [README proyek](../README.md).
+Back to the [project README](../README.md).

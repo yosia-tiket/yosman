@@ -2,34 +2,34 @@
 
 **REST easy with Yosman.**
 
-Yosman adalah API studio desktop untuk merancang, mengirim, menguji, mendokumentasikan, dan mem-mock HTTP request — tanpa harus menulis backend dulu.
+Yosman is a desktop API studio for designing, sending, testing, documenting, and mocking HTTP requests — without writing a backend first.
 
-Buka jendela aplikasi (bukan tab browser). Collection tersimpan di folder pengguna Anda.
+It opens as an application window (not a browser tab). Collections are stored in your user folder.
 
-## Dokumentasi
+## Documentation
 
-| Dokumen | Isi |
+| Document | Contents |
 | --- | --- |
-| [Getting started](docs/getting-started.md) | Instal, buka aplikasi, kirim request pertama |
-| [Tutorial](docs/tutorial.md) | Alur kerja lengkap: collection, environment, tes, import, mock |
-| [Panduan](docs/panduan.md) | Referensi semua fitur, shortcut, dan lokasi data |
+| [Getting started](docs/getting-started.md) | Install, open the app, send your first request |
+| [Tutorial](docs/tutorial.md) | Full workflow: collections, environments, tests, import, mocks |
+| [Guide](docs/guide.md) | Reference for every feature, shortcuts, and data locations |
 
-## Fitur
+## Features
 
-- **Request testing** — GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS. Lihat status, waktu, header, dan body JSON / XML / HTML.
-- **Collections & workflows** — Kelompokkan request ke collection dan folder. Jalankan suite berurutan di Runner.
-- **Environments** — Development, staging, production. Pakai `{{baseUrl}}`, `{{token}}`, dan variabel lain di URL, header, dan body.
-- **Automated tests** — JavaScript di tiap request dengan `pm.test` dan `pm.expect`.
-- **Docs & mocks** — Dokumentasi otomatis dari collection, plus mock server di proses yang sama.
-- **Import** — Postman Collection v2.1, Postman Environment, dan perintah cURL.
+- **Request testing** — GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS. Inspect status, timing, headers, and JSON / XML / HTML bodies.
+- **Collections & workflows** — Group requests into collections and folders. Run suites in order with Runner.
+- **Environments** — Development, staging, production. Use `{{baseUrl}}`, `{{token}}`, and other variables in URLs, headers, and bodies.
+- **Automated tests** — JavaScript per request with `pm.test` and `pm.expect`.
+- **Docs & mocks** — Auto-generated docs from collections, plus a mock server in the same process.
+- **Import** — Postman Collection v2.1, Postman Environment, and cURL commands.
 
-## Jalankan
+## Run
 
-Cara paling cepat:
+Fastest path:
 - **Windows:** double-click `dist\Yosman.exe` (Windows 10/11 + WebView2)
-- **macOS:** double-click `dist/Yosman.app` (macOS 11+; WebKit bawaan)
+- **macOS:** double-click `dist/Yosman.app` (macOS 11+; built-in WebKit)
 
-Dari source (Python 3.10+):
+From source (Python 3.10+):
 
 ```bash
 cd /path/to/yosman
@@ -39,8 +39,8 @@ pip install -r requirements.txt
 python run.py
 ```
 
-Atau `./yosman.sh` (macOS/Linux) / double-click `yosman.bat` (Windows).
+Or `./yosman.sh` (macOS/Linux) / double-click `yosman.bat` (Windows).
 
-Build ulang:
+Rebuild:
 - **macOS:** `./build.sh` → `dist/Yosman.app`
 - **Windows:** `.\build.bat` → `dist\Yosman.exe`
