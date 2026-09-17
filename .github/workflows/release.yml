@@ -1,0 +1,83 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    strategy:
+      matrix:
+        include:
+          - runner: macos-14   # Apple Silicon
+            arch: arm64
+          - runner: macos-13   # Intel
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build
+        run: |
+          set -euo pipefail
+          python3 -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install -r requirements.txt
+          .venv/bin/python -m pip install pyinstaller pillow
+          .venv/bin/python packaging/make_icon.py
+          .venv/bin/python -m PyInstaller --noconfirm Yosman.spec
+          codesign --force --deep --sign - dist/Yosman.app
+          ditto -c -k --sequesterRsrc --keepParent dist/Yosman.app "dist/Yosman-macOS-${{ matrix.arch }}.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: yosman-macos-${{ matrix.arch }}
+          path: dist/Yosman-macOS-${{ matrix.arch }}.zip
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build
+        shell: pwsh
+        run: |
+          python -m venv .venv
+          .venv\Scripts\python -m pip install --upgrade pip
+          .venv\Scripts\python -m pip install -r requirements.txt
+          .venv\Scripts\python -m pip install pyinstaller pillow
+          .venv\Scripts\python packaging\make_icon.py
+          .venv\Scripts\python -m PyInstaller --noconfirm Yosman.spec
+          Compress-Archive -Path dist\Yosman.exe -DestinationPath dist\Yosman-Windows-x64.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: yosman-windows-x64
+          path: dist/Yosman-Windows-x64.zip
+
+  release:
+    needs: [build-macos, build-windows]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*.zip
+          generate_release_notes: true
