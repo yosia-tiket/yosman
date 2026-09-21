@@ -199,23 +199,51 @@ function escapeHtml(text) {
     .replace(/"/g, "&quot;");
 }
 
-function highlightJson(text) {
-  try {
-    const pretty = JSON.stringify(JSON.parse(text), null, 2);
-    const html = pretty.replace(
-      /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
-      (match) => {
-        let cls = "num";
-        if (/^"/.test(match)) cls = /:$/.test(match) ? "key" : "str";
-        else if (/true|false/.test(match)) cls = "bool";
-        else if (/null/.test(match)) cls = "null";
-        return `<span class="j-${cls}">${escapeHtml(match)}</span>`;
-      }
-    );
-    return { html, pretty };
-  } catch {
-    return { html: escapeHtml(text), pretty: text };
+function jsonPrimitiveHtml(value) {
+  if (typeof value === "string") return `<span class="j-str">${escapeHtml(JSON.stringify(value))}</span>`;
+  if (typeof value === "number") return `<span class="j-num">${escapeHtml(String(value))}</span>`;
+  if (typeof value === "boolean") return `<span class="j-bool">${value}</span>`;
+  return `<span class="j-null">null</span>`;
+}
+
+function jsonKeyHtml(key) {
+  return `<span class="j-key">${escapeHtml(JSON.stringify(String(key)))}</span><span class="j-punc">: </span>`;
+}
+
+// Renders one value as a line (leaf) or a collapsible node (object/array),
+// recursing into children. Each node keeps its own open/close bracket lines
+// so collapsing it can hide everything between them and show an inline
+// summary instead.
+function jsonNodeHtml(value, keyHtml, trailingComma) {
+  const comma = trailingComma ? `<span class="j-punc">,</span>` : "";
+  if (value !== null && typeof value === "object") {
+    const isArray = Array.isArray(value);
+    const entries = isArray ? value.map((v, i) => [i, v]) : Object.entries(value);
+    const open = isArray ? "[" : "{";
+    const close = isArray ? "]" : "}";
+    if (!entries.length) {
+      return `<div class="j-line"><span class="j-gutter"></span><span class="j-content">${keyHtml}<span class="j-punc">${open}${close}</span>${comma}</span></div>`;
+    }
+    const count = entries.length;
+    const noun = isArray ? "item" : "key";
+    const childrenHtml = entries
+      .map(([k, v], idx) => jsonNodeHtml(v, isArray ? "" : jsonKeyHtml(k), idx < count - 1))
+      .join("");
+    return `<div class="j-node">
+      <div class="j-line j-toggle-line" data-j-toggle>
+        <span class="j-gutter"><span class="j-caret">▾</span></span>
+        <span class="j-content">${keyHtml}<span class="j-punc">${open}</span><span class="j-collapsed-summary"> ${count} ${noun}${count === 1 ? "" : "s"} ${close}${comma}</span></span>
+      </div>
+      <div class="j-children">${childrenHtml}</div>
+      <div class="j-line j-close"><span class="j-gutter"></span><span class="j-content"><span class="j-punc">${close}</span>${comma}</span></div>
+    </div>`;
   }
+  return `<div class="j-line"><span class="j-gutter"></span><span class="j-content">${keyHtml}${jsonPrimitiveHtml(value)}${comma}</span></div>`;
+}
+
+function jsonTreeHtml(text) {
+  const value = JSON.parse(text);
+  return `<div class="j-tree">${jsonNodeHtml(value, "", false)}</div>`;
 }
 
 function matchesSearch(node) {
@@ -597,8 +625,11 @@ function renderBody(data) {
     el.innerHTML = `<iframe class="preview" sandbox="allow-same-origin" srcdoc="${escapeHtml(text)}"></iframe>`;
     return;
   }
-  const highlighted = highlightJson(text);
-  el.innerHTML = `<pre>${highlighted.html}</pre>`;
+  try {
+    el.innerHTML = jsonTreeHtml(text);
+  } catch {
+    el.innerHTML = `<pre>${escapeHtml(text)}</pre>`;
+  }
 }
 
 function buildUrl(req, vars) {
@@ -1330,6 +1361,11 @@ function bind() {
     document.querySelectorAll("#resp-toolbar .chip").forEach((c) => c.classList.toggle("active", c === chip));
     const data = state.responses[state.activeId];
     if (data) renderBody(data);
+  });
+  document.getElementById("resp-body").addEventListener("click", (e) => {
+    const toggle = e.target.closest("[data-j-toggle]");
+    if (!toggle) return;
+    toggle.closest(".j-node")?.classList.toggle("collapsed");
   });
 
   const editorRoot = document.getElementById("builder-body");
