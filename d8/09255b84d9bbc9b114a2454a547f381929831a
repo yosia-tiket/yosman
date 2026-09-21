@@ -1,0 +1,25 @@
+README.md
+  s_06c864d87be534::t_4f8c2b022ef5d6 45,50
+  s_06c864d87be534::t_d418f129e434dc 52
+build.sh
+  s_06c864d87be534::t_fc39ac073b6b04 38-50,52-54
+.github/workflows/release.yml
+  s_06c864d87be534::t_3481a8303cdbc8 73-75
+  s_06c864d87be534::t_8f3858d88f0d40 25,30-32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.11",
+  "base_commit_sha": "d809255b84d9bbc9b114a2454a547f381929831a",
+  "prompts": {},
+  "sessions": {
+    "s_06c864d87be534": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97634bdc-3364-445b-9722-3e9fa54c11d7",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Yosia <yosia.yosia@tiket.com>"
+    }
+  }
+}
