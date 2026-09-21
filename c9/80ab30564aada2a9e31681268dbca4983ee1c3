@@ -1,0 +1,37 @@
+web/js/curl.js
+  s_06c864d87be534::t_8c240f68e5d7c8 369-370,374,379,383,387,390
+  s_06c864d87be534::t_1456e20075e523 343-368,371-373,375-378,380-382,384-386,388-389,391
+web/js/app.js
+  s_06c864d87be534::t_640beb7909e63e 1286
+  s_06c864d87be534::t_4f7b7ae60645e8 255,271,280
+  s_06c864d87be534::t_613f3dcedb7d35 1299-1303
+  s_06c864d87be534::t_7b976e071e9d88 101-133
+  s_06c864d87be534::t_d194cfe1f48239 963
+  s_06c864d87be534::t_43953bbb0275b7 1026-1033
+  s_06c864d87be534::t_2ff253aa4901f2 1445-1457
+  s_06c864d87be534::t_caf341884459ff 1123-1133,1152,1162,1184,1189-1250
+  s_06c864d87be534::t_1021acebbaaaa4 289-393
+  s_06c864d87be534::t_cc9ec341b66657 1251
+web/index.html
+  s_06c864d87be534::t_a5b90f49f0d5b8 281-301
+  s_06c864d87be534::t_4fb7c1a45f14c3 76-77
+web/css/app.css
+  s_06c864d87be534::t_23eec8b9cb3d9b 170,173
+  s_06c864d87be534::t_7f5ab547fc2a39 136-140
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.11",
+  "base_commit_sha": "c980ab30564aada2a9e31681268dbca4983ee1c3",
+  "prompts": {},
+  "sessions": {
+    "s_06c864d87be534": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97634bdc-3364-445b-9722-3e9fa54c11d7",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Yosia <yosia.yosia@tiket.com>"
+    }
+  }
+}
