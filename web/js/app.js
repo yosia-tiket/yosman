@@ -1632,6 +1632,25 @@ function bind() {
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
   });
+
+  const vSplitter = document.getElementById("v-splitter");
+  const reqLayout = document.getElementById("req-layout");
+  const reqEditor = document.getElementById("req-editor");
+  vSplitter.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    const layoutTop = reqLayout.getBoundingClientRect().top;
+    const maxHeight = reqLayout.clientHeight - 160 - vSplitter.offsetHeight;
+    const onMove = (ev) => {
+      const height = ev.clientY - layoutTop;
+      reqEditor.style.height = `${Math.max(160, Math.min(maxHeight, height))}px`;
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  });
 }
 
 function closeHistory() {

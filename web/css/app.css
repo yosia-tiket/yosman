@@ -174,13 +174,16 @@ select { cursor: pointer; }
 #builder-body { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .req-layout {
   flex: 1; min-height: 0;
-  display: grid;
-  grid-template-rows: minmax(220px, 1fr) minmax(200px, 1fr);
+  display: flex; flex-direction: column;
 }
 .req-editor, .resp-wrap {
   display: flex; flex-direction: column; min-height: 0;
   border-top: 1px solid var(--line);
 }
+.req-editor { flex: none; height: 50%; min-height: 160px; }
+.resp-wrap { flex: 1; min-height: 160px; }
+.v-splitter { height: 5px; flex: none; cursor: row-resize; background: transparent; }
+.v-splitter:hover { background: var(--accent-dim); }
 .subtabs { display: flex; gap: 2px; padding: 8px 12px 0; }
 .subtab {
   border: 0; background: none; color: var(--muted); font-weight: 600; font-size: 12px;

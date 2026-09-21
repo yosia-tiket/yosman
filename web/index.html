@@ -76,8 +76,8 @@
               <button type="button" class="btn ghost" id="btn-save-as" title="Save a copy under a new name">Save As</button>
               <button type="button" class="btn ghost" id="btn-copy-curl" title="Copy this request as a cURL command">Copy cURL</button>
             </div>
-            <div class="req-layout">
-              <div class="req-editor">
+            <div class="req-layout" id="req-layout">
+              <div class="req-editor" id="req-editor">
                 <div class="subtabs" id="req-subtabs">
                   <button class="subtab active" data-panel="params">Params</button>
                   <button class="subtab" data-panel="auth">Auth</button>
@@ -169,6 +169,7 @@
                   </div>
                 </div>
               </div>
+              <div class="v-splitter" id="v-splitter" title="Drag to resize"></div>
               <div class="resp-wrap">
                 <div class="resp-head">
                   <h3>Response</h3>
