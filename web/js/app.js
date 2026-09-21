@@ -817,8 +817,25 @@ function flattenRequests(collection) {
   return list;
 }
 
+const RUNNER_MAX_ITERATIONS = 999999999;
+const RUNNER_MAX_CARDS = 300;
+let runnerStopRequested = false;
+
 function renderRunner() {
   collectionOptions("runner-collection");
+}
+
+function clampRunnerIterations() {
+  const input = document.getElementById("runner-iterations");
+  let value = Math.floor(Number(input.value));
+  if (!Number.isFinite(value) || value < 1) value = 1;
+  if (value > RUNNER_MAX_ITERATIONS) value = RUNNER_MAX_ITERATIONS;
+  input.value = value;
+  return value;
+}
+
+function stopRunner() {
+  runnerStopRequested = true;
 }
 
 async function runSelectedCollection() {
@@ -826,39 +843,67 @@ async function runSelectedCollection() {
   const collection = state.workspace.collections.find((c) => c.id === id);
   if (!collection) return;
   const requests = flattenRequests(collection);
-  const box = document.getElementById("runner-results");
   const progress = document.getElementById("runner-progress");
+  if (!requests.length) {
+    progress.textContent = "This collection has no requests.";
+    return;
+  }
+  const iterations = clampRunnerIterations();
+  const box = document.getElementById("runner-results");
+  const runBtn = document.getElementById("btn-run-col");
+  const stopBtn = document.getElementById("btn-stop-run");
   box.innerHTML = "";
+  let cards = [];
   let passed = 0;
   let failed = 0;
-  for (let i = 0; i < requests.length; i += 1) {
-    const req = requests[i];
-    progress.textContent = `Running ${i + 1}/${requests.length}: ${req.name}`;
-    let result;
-    try {
-      result = await executeRequest(req);
-    } catch (err) {
-      result = { error: err.message, tests: [], status: null, time_ms: 0 };
-    }
-    state.responses[req.id] = result;
-    const testFail = (result.tests || []).some((t) => !t.passed);
-    const ok = result.status && result.status < 400 && !testFail && !result.error;
-    if (ok) passed += 1;
-    else failed += 1;
-    box.innerHTML += `<article class="run-card">
-      <div class="run-head">
-        <div><span class="method ${req.method}">${req.method}</span> <strong>${escapeHtml(req.name)}</strong></div>
-        <div class="resp-meta">
-          <span class="badge ${statusClass(result.status)}">${result.status || "ERR"}</span>
-          <span>${result.time_ms || 0} ms</span>
-          <span>${ok ? "passed" : "failed"}</span>
+  let stopped = false;
+  runnerStopRequested = false;
+  runBtn.disabled = true;
+  stopBtn.classList.remove("hidden");
+
+  outer: for (let iter = 0; iter < iterations; iter += 1) {
+    for (let i = 0; i < requests.length; i += 1) {
+      if (runnerStopRequested) {
+        stopped = true;
+        break outer;
+      }
+      const req = requests[i];
+      const iterLabel = iterations > 1 ? `Iteration ${iter + 1}/${iterations} — ` : "";
+      progress.textContent = `${iterLabel}Running ${i + 1}/${requests.length}: ${req.name}`;
+      let result;
+      try {
+        result = await executeRequest(req);
+      } catch (err) {
+        result = { error: err.message, tests: [], status: null, time_ms: 0 };
+      }
+      state.responses[req.id] = result;
+      const testFail = (result.tests || []).some((t) => !t.passed);
+      const ok = result.status && result.status < 400 && !testFail && !result.error;
+      if (ok) passed += 1;
+      else failed += 1;
+      cards.push(`<article class="run-card">
+        <div class="run-head">
+          <div>${iterations > 1 ? `<span class="muted">#${iter + 1}</span> ` : ""}<span class="method ${req.method}">${req.method}</span> <strong>${escapeHtml(req.name)}</strong></div>
+          <div class="resp-meta">
+            <span class="badge ${statusClass(result.status)}">${result.status || "ERR"}</span>
+            <span>${result.time_ms || 0} ms</span>
+            <span>${ok ? "passed" : "failed"}</span>
+          </div>
         </div>
-      </div>
-      <div class="muted">${escapeHtml(result.url || req.url)}</div>
-      ${renderTests(result.tests)}
-    </article>`;
+        <div class="muted">${escapeHtml(result.url || req.url)}</div>
+        ${renderTests(result.tests)}
+      </article>`);
+      if (cards.length > RUNNER_MAX_CARDS) cards = cards.slice(-RUNNER_MAX_CARDS);
+      box.innerHTML = cards.join("");
+      box.scrollTop = box.scrollHeight;
+    }
   }
-  progress.textContent = `Finished — ${passed} passed, ${failed} failed`;
+
+  runBtn.disabled = false;
+  stopBtn.classList.add("hidden");
+  const total = passed + failed;
+  const shownNote = total > cards.length ? ` (showing latest ${cards.length})` : "";
+  progress.textContent = `${stopped ? "Stopped" : "Finished"} — ${passed} passed, ${failed} failed${shownNote}`;
 }
 
 function renderDocs() {
@@ -1513,6 +1558,8 @@ function bind() {
   });
 
   document.getElementById("btn-run-col").addEventListener("click", runSelectedCollection);
+  document.getElementById("btn-stop-run").addEventListener("click", stopRunner);
+  document.getElementById("runner-iterations").addEventListener("change", clampRunnerIterations);
   document.getElementById("docs-collection").addEventListener("change", renderDocs);
   document.getElementById("btn-print-docs").addEventListener("click", () => window.print());
   document.getElementById("docs-output").addEventListener("click", (e) => {

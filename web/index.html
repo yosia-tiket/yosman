@@ -201,7 +201,12 @@
             </div>
             <div class="row-gap">
               <select id="runner-collection"></select>
+              <label class="env-label">
+                <span>Iterations</span>
+                <input type="number" id="runner-iterations" min="1" max="999999999" step="1" value="1" />
+              </label>
               <button type="button" class="btn primary" id="btn-run-col">Run collection</button>
+              <button type="button" class="btn ghost hidden" id="btn-stop-run">Stop</button>
             </div>
           </div>
           <div id="runner-progress" class="muted"></div>

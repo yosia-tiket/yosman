@@ -66,6 +66,7 @@ img.mark {
 
 .top-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 .env-label { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+#runner-iterations { width: 110px; font-family: var(--mono); }
 select, input, textarea, button { font-family: inherit; }
 select, input[type="search"], input:not([type="checkbox"]):not([type="file"]), textarea {
   background: var(--panel);
