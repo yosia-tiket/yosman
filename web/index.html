@@ -73,6 +73,8 @@
               <input id="req-url" class="url-input" spellcheck="false" placeholder="https://api.example.com/{{resource}}" />
               <button type="button" class="btn primary" id="btn-send">Send</button>
               <button type="button" class="btn ghost" id="btn-save" title="Saved automatically">Saved</button>
+              <button type="button" class="btn ghost" id="btn-save-as" title="Save a copy under a new name">Save As</button>
+              <button type="button" class="btn ghost" id="btn-copy-curl" title="Copy this request as a cURL command">Copy cURL</button>
             </div>
             <div class="req-layout">
               <div class="req-editor">
@@ -273,6 +275,27 @@
       <div class="row-gap pad-x modal-actions">
         <button type="button" class="btn ghost" id="btn-cancel-curl">Cancel</button>
         <button type="button" class="btn primary" id="btn-curl-import">Import request</button>
+      </div>
+    </div>
+  </div>
+  <div id="saveas-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="drawer-head">
+        <h3>Save as</h3>
+        <button type="button" class="icon-btn" id="btn-close-saveas">×</button>
+      </div>
+      <p class="hint pad-x">Save a copy of this request under a new name. The original stays where it is.</p>
+      <label class="field pad-x">
+        <span>Name</span>
+        <input type="text" id="saveas-name" spellcheck="false" />
+      </label>
+      <label class="field pad-x">
+        <span>Save to</span>
+        <select id="saveas-target"></select>
+      </label>
+      <div class="row-gap pad-x modal-actions">
+        <button type="button" class="btn ghost" id="btn-cancel-saveas">Cancel</button>
+        <button type="button" class="btn primary" id="btn-saveas-confirm">Save as</button>
       </div>
     </div>
   </div>

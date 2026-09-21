@@ -133,6 +133,11 @@ select { cursor: pointer; }
 .tree-item.active { background: var(--accent-dim); color: var(--accent); }
 .tree-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tree-children { margin-left: 12px; border-left: 1px solid var(--line); padding-left: 6px; }
+.tree-item[draggable="true"], .tree-folder-h[draggable="true"] { cursor: grab; }
+.tree-item.dragging, .tree-folder-h.dragging { opacity: 0.4; }
+.drop-before { box-shadow: inset 0 2px 0 0 var(--accent); }
+.drop-after { box-shadow: inset 0 -2px 0 0 var(--accent); }
+.drop-into { background: var(--accent-dim); outline: 1px dashed var(--accent); outline-offset: -2px; }
 .method {
   font-family: var(--mono); font-size: 10px; font-weight: 600; width: 42px; flex: none;
 }
@@ -162,10 +167,10 @@ select { cursor: pointer; }
 .tab.active { background: var(--panel); border-color: var(--line); border-bottom-color: var(--panel); color: var(--text); }
 .tab .x { opacity: 0.5; border: 0; background: none; color: inherit; cursor: pointer; }
 
-.req-bar { display: flex; gap: 8px; padding: 12px; align-items: center; }
+.req-bar { display: flex; gap: 8px; padding: 12px; align-items: center; flex-wrap: wrap; }
 .req-name { width: 160px; flex: none; }
 .method-select { width: 110px; font-family: var(--mono); font-weight: 600; }
-.url-input { flex: 1; font-family: var(--mono); font-size: 13px; }
+.url-input { flex: 1; min-width: 160px; font-family: var(--mono); font-size: 13px; }
 #builder-body { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .req-layout {
   flex: 1; min-height: 0;

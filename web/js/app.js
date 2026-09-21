@@ -98,6 +98,39 @@ function removeNode(nodes, id) {
   return false;
 }
 
+function findParentInfo(nodes, id, parentNode) {
+  for (let index = 0; index < (nodes || []).length; index += 1) {
+    const node = nodes[index];
+    if (node.id === id) return { array: nodes, index, parentNode };
+    if (node.type === "folder") {
+      const found = findParentInfo(node.children, id, node);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+// Unlike locate(), which only reports the top-level collection, this reports
+// the node's immediate container (a folder or the collection root) — needed
+// to reorder/move it in place.
+function locateParentInfo(id) {
+  for (const collection of state.workspace.collections) {
+    if (collection.id === id) return null;
+    const found = findParentInfo(collection.children, id, collection);
+    if (found) return found;
+  }
+  return null;
+}
+
+function isAncestor(folderNode, targetId) {
+  if (folderNode.type !== "folder") return false;
+  let found = false;
+  walk(folderNode.children, (child) => {
+    if (child.id === targetId) found = true;
+  });
+  return found;
+}
+
 function currentRequest() {
   if (!state.activeId || !state.workspace) return null;
   const loc = locate(state.activeId);
@@ -219,7 +252,7 @@ function treeHasMatch(nodes) {
 function renderCollection(col) {
   const open = !state.collapsed.has(col.id);
   return `<div class="tree-col" data-id="${col.id}">
-    <div class="tree-col-h" data-act="toggle" data-id="${col.id}">
+    <div class="tree-col-h" data-act="toggle" data-id="${col.id}" data-drop="collection" data-drop-id="${col.id}">
       <span class="caret">${open ? "▼" : "▶"}</span>
       <span class="tree-name">${escapeHtml(col.name)}</span>
       <button class="icon-btn" data-act="menu" data-kind="collection" data-id="${col.id}" title="More">⋯</button>
@@ -235,7 +268,7 @@ function renderNodes(nodes) {
       if (node.type === "folder") {
         const open = !state.collapsed.has(node.id);
         return `<div data-id="${node.id}">
-          <div class="tree-folder-h" data-act="toggle" data-id="${node.id}">
+          <div class="tree-folder-h" data-act="toggle" data-id="${node.id}" draggable="true" data-drag-id="${node.id}" data-drop="folder" data-drop-id="${node.id}">
             <span class="caret">${open ? "▼" : "▶"}</span>
             <span class="tree-name">${escapeHtml(node.name)}</span>
             <button class="icon-btn" data-act="menu" data-kind="folder" data-id="${node.id}">⋯</button>
@@ -244,13 +277,118 @@ function renderNodes(nodes) {
         </div>`;
       }
       const active = node.id === state.activeId ? " active" : "";
-      return `<div class="tree-item${active}" data-act="open" data-id="${node.id}">
+      return `<div class="tree-item${active}" data-act="open" data-id="${node.id}" draggable="true" data-drag-id="${node.id}" data-drop="request" data-drop-id="${node.id}">
         <span class="method ${escapeHtml(node.method)}">${escapeHtml(node.method)}</span>
         <span class="tree-name">${escapeHtml(node.name)}</span>
         <button class="icon-btn" data-act="menu" data-kind="request" data-id="${node.id}">⋯</button>
       </div>`;
     })
     .join("");
+}
+
+let dragNodeId = null;
+
+function clearDropIndicators() {
+  document.querySelectorAll(".drop-before, .drop-after, .drop-into").forEach((el) => {
+    el.classList.remove("drop-before", "drop-after", "drop-into");
+  });
+}
+
+function dropPlacement(e, target) {
+  const dropKind = target.dataset.drop;
+  const dropId = target.dataset.dropId;
+  if (dropKind === "collection") return { dropKind, dropId, placement: "into" };
+  const rect = target.getBoundingClientRect();
+  const offset = e.clientY - rect.top;
+  if (dropKind === "folder") {
+    if (offset < rect.height * 0.25) return { dropKind, dropId, placement: "before" };
+    if (offset > rect.height * 0.75) return { dropKind, dropId, placement: "after" };
+    return { dropKind, dropId, placement: "into" };
+  }
+  return { dropKind, dropId, placement: offset < rect.height / 2 ? "before" : "after" };
+}
+
+function moveNodeByDrop(dragId, dropId, placement) {
+  const dragInfo = locateParentInfo(dragId);
+  if (!dragInfo || dropId === dragId) return;
+  const draggedNode = dragInfo.array[dragInfo.index];
+
+  if (draggedNode.type === "folder" && isAncestor(draggedNode, dropId)) {
+    toast("Can't move a folder into itself");
+    return;
+  }
+
+  let destArray;
+  let destIndex;
+  if (placement === "into") {
+    const container = locate(dropId)?.node;
+    if (!container) return;
+    container.children = container.children || [];
+    destArray = container.children;
+    destIndex = destArray.length;
+  } else {
+    const targetInfo = locateParentInfo(dropId);
+    if (!targetInfo) return;
+    destArray = targetInfo.array;
+    destIndex = placement === "before" ? targetInfo.index : targetInfo.index + 1;
+  }
+
+  dragInfo.array.splice(dragInfo.index, 1);
+  if (destArray === dragInfo.array && dragInfo.index < destIndex) destIndex -= 1;
+  destArray.splice(Math.max(0, Math.min(destIndex, destArray.length)), 0, draggedNode);
+
+  persist();
+  renderTree();
+  renderTabs();
+}
+
+function bindTreeDragDrop() {
+  const tree = document.getElementById("tree");
+
+  tree.addEventListener("dragstart", (e) => {
+    const handle = e.target.closest("[data-drag-id]");
+    if (!handle) return;
+    dragNodeId = handle.dataset.dragId;
+    handle.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", dragNodeId);
+  });
+
+  tree.addEventListener("dragover", (e) => {
+    if (!dragNodeId) return;
+    const target = e.target.closest("[data-drop]");
+    if (!target || target.dataset.dropId === dragNodeId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    clearDropIndicators();
+    const { placement } = dropPlacement(e, target);
+    target.classList.add(`drop-${placement}`);
+  });
+
+  tree.addEventListener("dragleave", (e) => {
+    const target = e.target.closest("[data-drop]");
+    if (target && !target.contains(e.relatedTarget)) {
+      target.classList.remove("drop-before", "drop-after", "drop-into");
+    }
+  });
+
+  tree.addEventListener("drop", (e) => {
+    if (!dragNodeId) return;
+    const target = e.target.closest("[data-drop]");
+    clearDropIndicators();
+    const draggedId = dragNodeId;
+    dragNodeId = null;
+    if (!target || target.dataset.dropId === draggedId) return;
+    e.preventDefault();
+    const { dropId, placement } = dropPlacement(e, target);
+    moveNodeByDrop(draggedId, dropId, placement);
+  });
+
+  tree.addEventListener("dragend", () => {
+    clearDropIndicators();
+    document.querySelectorAll(".dragging").forEach((el) => el.classList.remove("dragging"));
+    dragNodeId = null;
+  });
 }
 
 function renderTabs() {
@@ -822,7 +960,7 @@ function showMenu(x, y, kind, id) {
   } else if (kind === "folder") {
     items.push(["New request", "new-req"], ["Import cURL", "import-curl"], ["Rename", "rename"], ["Delete", "delete"]);
   } else {
-    items.push(["Duplicate", "dup"], ["Rename", "rename"], ["Delete", "delete"]);
+    items.push(["Duplicate", "dup"], ["Save as…", "save-as"], ["Copy as cURL", "copy-curl"], ["Rename", "rename"], ["Delete", "delete"]);
   }
   menu.innerHTML = items
     .map(([label, act]) => `<button data-ctx="${act}" data-kind="${kind}" data-id="${id}">${label}</button>`)
@@ -884,6 +1022,14 @@ function handleContext(act, kind, id) {
   if (act === "export") {
     const col = state.workspace.collections.find((c) => c.id === id);
     download(`${col.name}.yosman.json`, JSON.stringify(col, null, 2));
+  }
+  if (act === "save-as") {
+    const loc = locate(id);
+    if (loc && loc.node.type === "request") openSaveAsModal(loc.node);
+  }
+  if (act === "copy-curl") {
+    const loc = locate(id);
+    if (loc && loc.node.type === "request") copyRequestAsCurl(loc.node);
   }
   if (act === "delete") {
     if (!confirm("Delete this item?")) return;
@@ -974,8 +1120,18 @@ function curlTargets() {
   return targets;
 }
 
+function populateTargetSelect(select, selectedValue) {
+  const targets = curlTargets();
+  select.innerHTML = targets
+    .map(
+      (item) =>
+        `<option value="${item.kind}:${item.id}" ${`${item.kind}:${item.id}` === selectedValue ? "selected" : ""}>${escapeHtml(item.label)}</option>`
+    )
+    .join("");
+  return targets;
+}
+
 function openCurlModal(command = "", target = null) {
-  const select = document.getElementById("curl-target");
   if (!curlTargets().length) {
     state.workspace.collections.push({
       id: uid("col"),
@@ -993,12 +1149,7 @@ function openCurlModal(command = "", target = null) {
     : loc
       ? `collection:${loc.collection.id}`
       : `${nextTargets[0].kind}:${nextTargets[0].id}`;
-  select.innerHTML = nextTargets
-    .map(
-      (item) =>
-        `<option value="${item.kind}:${item.id}" ${`${item.kind}:${item.id}` === selected ? "selected" : ""}>${escapeHtml(item.label)}</option>`
-    )
-    .join("");
+  populateTargetSelect(document.getElementById("curl-target"), selected);
   document.getElementById("curl-input").value = command || "";
   document.getElementById("curl-modal").classList.remove("hidden");
   document.getElementById("curl-input").focus();
@@ -1008,7 +1159,7 @@ function closeCurlModal() {
   document.getElementById("curl-modal").classList.add("hidden");
 }
 
-function addParsedRequest(req, targetValue) {
+function insertRequestNode(req, targetValue) {
   const [kind, id] = String(targetValue || "").split(":");
   if (kind === "folder") {
     const loc = locate(id);
@@ -1030,9 +1181,72 @@ function addParsedRequest(req, targetValue) {
 function importCurlCommand() {
   const command = document.getElementById("curl-input").value;
   const req = parseCurl(command);
-  addParsedRequest(req, document.getElementById("curl-target").value);
+  insertRequestNode(req, document.getElementById("curl-target").value);
   closeCurlModal();
   toast(`Imported cURL: ${req.method} ${req.name}`);
+}
+
+async function copyRequestAsCurl(req) {
+  if (!req) return;
+  const command = requestToCurl(req, envMap());
+  try {
+    await navigator.clipboard.writeText(command);
+    toast("Copied as cURL");
+  } catch {
+    toast("Couldn't copy — clipboard unavailable");
+  }
+}
+
+let saveAsSourceId = null;
+
+function openSaveAsModal(node) {
+  if (!curlTargets().length) {
+    toast("Create a collection first");
+    return;
+  }
+  saveAsSourceId = node.id;
+  const parentInfo = locateParentInfo(node.id);
+  const defaultTarget = parentInfo
+    ? `${parentInfo.parentNode.type === "folder" ? "folder" : "collection"}:${parentInfo.parentNode.id}`
+    : null;
+  const targets = populateTargetSelect(document.getElementById("saveas-target"), defaultTarget);
+  if (!defaultTarget && targets[0]) {
+    document.getElementById("saveas-target").value = `${targets[0].kind}:${targets[0].id}`;
+  }
+  const nameInput = document.getElementById("saveas-name");
+  nameInput.value = `${node.name} copy`;
+  document.getElementById("saveas-modal").classList.remove("hidden");
+  nameInput.focus();
+  nameInput.select();
+}
+
+function closeSaveAsModal() {
+  document.getElementById("saveas-modal").classList.add("hidden");
+  saveAsSourceId = null;
+}
+
+function confirmSaveAs() {
+  const loc = saveAsSourceId ? locate(saveAsSourceId) : null;
+  if (!loc || loc.node.type !== "request") {
+    closeSaveAsModal();
+    return;
+  }
+  const name = document.getElementById("saveas-name").value.trim();
+  if (!name) {
+    toast("Enter a name");
+    return;
+  }
+  const targetValue = document.getElementById("saveas-target").value;
+  const copy = JSON.parse(JSON.stringify(loc.node));
+  copy.id = uid("req");
+  copy.name = name;
+  try {
+    insertRequestNode(copy, targetValue);
+    closeSaveAsModal();
+    toast(`Saved as "${name}"`);
+  } catch (err) {
+    toast(err.message);
+  }
 }
 
 function bind() {
@@ -1069,6 +1283,7 @@ function bind() {
     }
     if (act === "open") openRequest(id);
   });
+  bindTreeDragDrop();
   document.getElementById("tabs").addEventListener("click", (e) => {
     const close = e.target.closest("[data-act='close-tab']");
     if (close) {
@@ -1081,6 +1296,11 @@ function bind() {
   });
   document.getElementById("btn-send").addEventListener("click", sendActive);
   document.getElementById("btn-save").addEventListener("click", () => persist(true).then(() => toast("Workspace saved")));
+  document.getElementById("btn-save-as").addEventListener("click", () => {
+    const req = currentRequest();
+    if (req) openSaveAsModal(req);
+  });
+  document.getElementById("btn-copy-curl").addEventListener("click", () => copyRequestAsCurl(currentRequest()));
   document.addEventListener("keydown", (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
       e.preventDefault();
@@ -1221,6 +1441,19 @@ function bind() {
   });
   document.getElementById("curl-modal").addEventListener("click", (e) => {
     if (e.target.id === "curl-modal") closeCurlModal();
+  });
+  document.getElementById("btn-close-saveas").addEventListener("click", closeSaveAsModal);
+  document.getElementById("btn-cancel-saveas").addEventListener("click", closeSaveAsModal);
+  document.getElementById("btn-saveas-confirm").addEventListener("click", confirmSaveAs);
+  document.getElementById("saveas-name").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      confirmSaveAs();
+    }
+    if (e.key === "Escape") closeSaveAsModal();
+  });
+  document.getElementById("saveas-modal").addEventListener("click", (e) => {
+    if (e.target.id === "saveas-modal") closeSaveAsModal();
   });
   document.getElementById("req-url").addEventListener("paste", (e) => {
     const text = e.clipboardData?.getData("text") || "";

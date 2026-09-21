@@ -340,3 +340,52 @@ function parseCurl(command) {
   request.description = "Imported from cURL";
   return request;
 }
+
+function curlQuote(value) {
+  return `'${String(value ?? "").replace(/'/g, `'\\''`)}'`;
+}
+
+function curlBodyLines(text, vars) {
+  return String(text || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const eq = line.indexOf("=");
+      const key = interpolate(eq >= 0 ? line.slice(0, eq) : line, vars);
+      const value = interpolate(eq >= 0 ? line.slice(eq + 1) : "", vars);
+      return { key, value };
+    });
+}
+
+// Builds a runnable `curl` command for a request, resolving {{vars}} against
+// the given environment map the same way Send does — unlike parseCurl above,
+// this is export, not import.
+function requestToCurl(req, vars) {
+  const method = (req.method || "GET").toUpperCase();
+  const canHaveBody = method !== "GET" && method !== "HEAD";
+  const url = buildUrl(req, vars);
+  const headers = buildHeaders(req, vars);
+  const lines = ["curl --location " + curlQuote(url)];
+  if (method !== "GET") lines.push(`--request ${method}`);
+
+  for (const [key, value] of Object.entries(headers)) {
+    if (req.body_type === "formdata" && key.toLowerCase() === "content-type") continue;
+    lines.push(`--header ${curlQuote(`${key}: ${value}`)}`);
+  }
+
+  if (canHaveBody && req.body_type === "formdata") {
+    for (const { key, value } of curlBodyLines(req.body, vars)) {
+      lines.push(`--form ${curlQuote(`${key}=${value}`)}`);
+    }
+  } else if (canHaveBody && req.body_type === "urlencoded") {
+    for (const { key, value } of curlBodyLines(req.body, vars)) {
+      lines.push(`--data-urlencode ${curlQuote(`${key}=${value}`)}`);
+    }
+  } else {
+    const body = buildBody(req, vars);
+    if (typeof body === "string" && body) lines.push(`--data-raw ${curlQuote(body)}`);
+  }
+
+  return lines.join(" \\\n  ");
+}
