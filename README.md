@@ -42,14 +42,14 @@ python run.py
 Or `./yosman.sh` (macOS/Linux) / double-click `yosman.bat` (Windows).
 
 Rebuild:
-- **macOS:** `./build.sh` → `dist/Yosman.app` and `dist/Yosman-macOS-<arch>.zip`
+- **macOS:** `./build.sh` → `dist/Yosman.app`, `dist/Yosman-macOS-<arch>.dmg`, and `dist/Yosman-macOS-<arch>.zip`
 - **Windows:** `.\build.bat` → `dist\Yosman.exe`
 
 ## Share the macOS build with someone else
 
-`./build.sh` ad-hoc signs `dist/Yosman.app` (so it runs on your own Mac) and packages it as `dist/Yosman-macOS-<arch>.zip`. Send that zip to whoever needs it — no Python install required on their end.
+`./build.sh` ad-hoc signs `dist/Yosman.app` (so it runs on your own Mac) and packages it as `dist/Yosman-macOS-<arch>.dmg` — a normal macOS disk image with a drag-to-Applications shortcut — plus a `dist/Yosman-macOS-<arch>.zip` as an alternative. Send the `.dmg` to whoever needs it — no Python install required on their end.
 
-This build isn't notarized by Apple (that needs a paid $99/yr Apple Developer Program membership), so the first time the recipient opens it, Gatekeeper will warn that it's from an unidentified developer. They only need to do this once:
+This build isn't notarized by Apple (that needs a paid $99/yr Apple Developer Program membership), so the first time the recipient opens the app (after dragging it out of the `.dmg` into Applications), Gatekeeper will warn that it's from an unidentified developer. They only need to do this once:
 
 - **Right-click (or Control-click) `Yosman.app` → Open → Open** in the confirmation dialog, or
 - In Terminal: `xattr -cr /path/to/Yosman.app`, then double-click normally.

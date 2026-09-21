@@ -35,10 +35,23 @@ if [[ -d dist/Yosman.app ]]; then
   rm -f "dist/${zip_name}"
   ditto -c -k --sequesterRsrc --keepParent dist/Yosman.app "dist/${zip_name}"
   echo "  dist/${zip_name}"
+
+  dmg_name="Yosman-macOS-${arch}.dmg"
+  title "Packaging dist/${dmg_name}..."
+  rm -f "dist/${dmg_name}"
+  dmg_stage="$(mktemp -d)"
+  trap 'rm -rf "$dmg_stage"' EXIT
+  ditto dist/Yosman.app "$dmg_stage/Yosman.app"
+  ln -s /Applications "$dmg_stage/Applications"
+  hdiutil create -volname "Yosman" -srcfolder "$dmg_stage" -ov -format UDZO "dist/${dmg_name}" -quiet
+  rm -rf "$dmg_stage"
+  trap - EXIT
+  echo "  dist/${dmg_name}"
+
   echo
-  echo "To share: send dist/${zip_name}. The recipient unzips it, then either"
-  echo "right-clicks Yosman.app -> Open (first launch only), or runs:"
-  echo "  xattr -cr /path/to/Yosman.app"
+  echo "To share: send dist/${dmg_name} (or the zip). The recipient opens it,"
+  echo "drags Yosman into Applications, then either right-clicks Yosman.app ->"
+  echo "Open (first launch only), or runs: xattr -cr /path/to/Yosman.app"
   echo "This app is not notarized by Apple (no paid Developer ID), so macOS"
   echo "Gatekeeper will otherwise refuse to open it on someone else's Mac."
 elif [[ -x dist/Yosman ]]; then
