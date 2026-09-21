@@ -1,0 +1,24 @@
+web/css/app.css
+  s_06c864d87be534::t_953186fc0f9ae8 69
+web/index.html
+  s_06c864d87be534::t_4d608748999c83 204-207,209
+web/js/app.js
+  s_06c864d87be534::t_075ee6082e29c3 1561-1562
+  s_06c864d87be534::t_ff6aa8b29de1a4 820-823,828-840,847-854,856,859-891,893-899,901-906
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.11",
+  "base_commit_sha": "568ee22c84daa45b55fe702e276f5068c0e5a605",
+  "prompts": {},
+  "sessions": {
+    "s_06c864d87be534": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97634bdc-3364-445b-9722-3e9fa54c11d7",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Yosia <yosia.yosia@tiket.com>"
+    }
+  }
+}
