@@ -1,0 +1,25 @@
+docs/guide.md
+  s_06c864d87be534::t_fbffe5d84aeeea 130-132,135-137,140-142
+  s_06c864d87be534::t_e6ce8a79fc38a5 143
+web/js/tests.js
+  s_06c864d87be534::t_3e88d3499d2b9b 9-34,36-43,46-105,109,111,118-137,141-155,158-159,164-165,167-170,182-184,196-197,211,219
+web/js/app.js
+  s_06c864d87be534::t_36fd42295aebe8 194-218
+  s_06c864d87be534::t_1a6283391224a2 744-747,749-750,755-758,777-778,783
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.11",
+  "base_commit_sha": "cba97be594f5bc60e1e7633a3e117cb57a73388c",
+  "prompts": {},
+  "sessions": {
+    "s_06c864d87be534": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97634bdc-3364-445b-9722-3e9fa54c11d7",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Yosia <yosia.yosia@tiket.com>"
+    }
+  }
+}
