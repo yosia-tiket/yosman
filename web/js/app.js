@@ -191,6 +191,31 @@ function applyEnvUpdates(updates) {
   }
 }
 
+function collectionOf(requestId) {
+  return locate(requestId)?.collection || null;
+}
+
+function collectionVarMap(collection) {
+  const map = {};
+  for (const row of collection?.variables || []) {
+    if (row.enabled && row.key) map[row.key] = row.value ?? "";
+  }
+  return map;
+}
+
+function applyCollectionVarUpdates(collection, updates) {
+  if (!collection) return;
+  collection.variables = collection.variables || [];
+  for (const [key, value] of Object.entries(updates)) {
+    let row = collection.variables.find((item) => item.key === key);
+    if (!row) {
+      collection.variables.push(kv(key, String(value)));
+    } else {
+      row.value = String(value);
+    }
+  }
+}
+
 function escapeHtml(text) {
   return String(text)
     .replace(/&/g, "&amp;")
@@ -716,14 +741,21 @@ function buildBody(req, vars) {
 }
 
 async function executeRequest(req) {
-  let vars = envMap();
+  const collection = collectionOf(req.id);
+  let envVars = envMap();
+  let collVars = collectionVarMap(collection);
+  let vars = { ...collVars, ...envVars };
   const pre = runUserScript(req.pre_request_script, {
-    environment: vars,
+    environment: envVars,
+    collectionVariables: collVars,
     request: { method: req.method, url: req.url },
     response: {},
   });
   applyEnvUpdates(pre.env);
-  vars = envMap();
+  applyCollectionVarUpdates(collection, pre.collectionVars);
+  envVars = envMap();
+  collVars = collectionVarMap(collection);
+  vars = { ...collVars, ...envVars };
   const settings = state.workspace.settings || {};
   const headers = buildHeaders(req, vars);
   let body = buildBody(req, vars);
@@ -742,11 +774,13 @@ async function executeRequest(req) {
   };
   const result = await apiSend(payload);
   const tests = runUserScript(req.test_script, {
-    environment: vars,
+    environment: envVars,
+    collectionVariables: collVars,
     request: payload,
     response: result,
   });
   applyEnvUpdates(tests.env);
+  applyCollectionVarUpdates(collection, tests.collectionVars);
   persist();
   const combined = { ...result, tests: tests.tests, logs: tests.logs, url: payload.url };
   state.workspace.history = [

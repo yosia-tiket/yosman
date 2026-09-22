@@ -127,9 +127,19 @@ pm.response.responseTime
 pm.response.json()
 pm.response.text()
 pm.response.headers
+pm.response.to.have.status(200);       // chai-http style response assertions
+pm.response.to.be.ok;                  // 2xx
+pm.response.to.have.header("Content-Type");
 pm.environment.get("key")
 pm.environment.set("key", "value")
+pm.collectionVariables.get("key")      // scoped to the request's collection
+pm.collectionVariables.set("key", "value")
+pm.variables.get("key")                // reads environment, falling back to collection scope
 ```
+
+`pm.expect(...)` supports chai's common BDD chain: language words (`to`, `be`, `have`, `and`, `not`, ...), property assertions (`.true`, `.false`, `.null`, `.undefined`, `.exist`, `.empty`, `.NaN`), and methods (`.equal`, `.eql`, `.a`/`.an`, `.above`, `.below`, `.least`, `.most`, `.within`, `.include`/`.contain`, `.property`, `.length`/`.lengthOf`, `.match`, `.string`, `.instanceOf`).
+
+Collection variables set in one request's scripts are available (via `{{name}}` and `pm.collectionVariables.get`) in later requests from the same collection — handy for stashing a token from a login call. They're saved on the collection and persist with the workspace. Environment variables of the same name take precedence.
 
 Scripts run in a browser sandbox (not on the server). Do not rely on `fetch` to arbitrary hosts from test scripts; send HTTP through Yosman requests.
 
